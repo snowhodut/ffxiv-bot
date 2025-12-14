@@ -4,7 +4,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-// 한국 서버 정보
+// 한국 서버 정보 (이모지 포함)
 const KOREAN_SERVERS = [
     { id: 2075, name: '카벙클', emoji: '💎' },
     { id: 2076, name: '초코보', emoji: '🐤' },
@@ -62,30 +62,64 @@ function loadKoreanItemDB() {
 /**
  * 한국어 아이템 이름으로 검색
  * 부분 일치 검색 지원
+ * 
+ * 우선순위:
+ * 1. 정확히 일치
+ * 2. 검색어로 끝나는 것 (짧은 이름 > 낮은 ID)
+ * 3. 검색어로 시작하는 것 (짧은 이름 > 낮은 ID)
+ * 4. 검색어를 포함하는 것 (짧은 이름 > 낮은 ID)
+ * 
+ * @returns {{ item: object|null, suggestions: object[] }}
  */
 function searchKoreanItem(query) {
     const queryLower = query.toLowerCase();
     
     // 1. 정확히 일치하는 것 먼저
     if (koreanItemDB.has(queryLower)) {
-        return koreanItemDB.get(queryLower);
+        return { 
+            item: koreanItemDB.get(queryLower), 
+            suggestions: [] 
+        };
     }
     
-    // 2. 부분 일치 검색
-    const matches = [];
+    const endsWithMatches = [];   // 검색어로 끝나는 것
+    const startsWithMatches = []; // 검색어로 시작하는 것
+    const containsMatches = [];   // 검색어를 포함하는 것
+    
     for (const [name, item] of koreanItemDB) {
-        if (name.includes(queryLower)) {
-            matches.push(item);
+        if (name.endsWith(queryLower)) {
+            endsWithMatches.push(item);
+        } else if (name.startsWith(queryLower)) {
+            startsWithMatches.push(item);
+        } else if (name.includes(queryLower)) {
+            containsMatches.push(item);
         }
     }
     
-    // 가장 짧은 이름 (가장 정확한 매치) 반환
-    if (matches.length > 0) {
-        matches.sort((a, b) => a.name.length - b.name.length);
-        return matches[0];
+    // 정렬 함수: 이름 길이순, 같으면 ID 낮은 순
+    const sortFn = (a, b) => {
+        if (a.name.length !== b.name.length) {
+            return a.name.length - b.name.length;
+        }
+        return a.id - b.id;
+    };
+    
+    endsWithMatches.sort(sortFn);
+    startsWithMatches.sort(sortFn);
+    containsMatches.sort(sortFn);
+    
+    // 모든 매치 합치기 (우선순위 순서대로)
+    const allMatches = [...endsWithMatches, ...startsWithMatches, ...containsMatches];
+    
+    if (allMatches.length === 0) {
+        return { item: null, suggestions: [] };
     }
     
-    return null;
+    // 첫 번째가 메인 결과, 나머지는 추천 (최대 10개)
+    const item = allMatches[0];
+    const suggestions = allMatches.slice(1, 11);
+    
+    return { item, suggestions };
 }
 
 /**
@@ -302,16 +336,17 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
         }
     }
     
-    // 상단에 전체 최저가 표시
+    // 상단에 전체 최저가 표시 + 디바이더
     let headerText = '';
     if (overallMinNQ !== null) {
-        headerText += `🟩 **NQ 최저: ${overallMinNQ.toLocaleString()}G** — ${overallMinNQServer}\n`;
+        headerText += `**NQ 최저: ${overallMinNQ.toLocaleString()}G** — ${overallMinNQServer}\n`;
     }
     if (overallMinHQ !== null) {
-        headerText += `🟦 **HQ 최저: ${overallMinHQ.toLocaleString()}G** — ${overallMinHQServer}\n`;
+        headerText += `**HQ 최저: ${overallMinHQ.toLocaleString()}G** — ${overallMinHQServer}\n`;
     }
     
     if (headerText) {
+        headerText += '\n‧˚₊‧ ┈┈┈ ⟡ ┈┈┈ ‧₊˚⊹';
         embed.setDescription(headerText);
     }
     
@@ -328,9 +363,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
         const isMinHQ = r.minPriceHQ === overallMinHQ && overallMinHQ !== null;
         
         let serverLine = `${r.emoji} **${r.server}**`;
-        if (isMinNQ) serverLine += ' 🟩NQ최저';
-        if (isMinHQ) serverLine += ' 🟦HQ최저';
-        serverLine += '\n';
+        serverLine += '\n\n';
         
         // 가격 정보
         if (r.minPriceNQ !== null || r.minPriceHQ !== null) {
@@ -360,7 +393,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
             
             serverLine += `${isMinNQ ? '⭐ ' : ''}${prices.join(' | ')}`;
             if (updateStr) {
-                serverLine += ` | 🕐 업데이트: ${updateStr}`;
+                serverLine += `  |  🕐 업데이트: ${updateStr}`;
             }
             serverLine += '\n';
         } else {
@@ -376,7 +409,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
     
     // 구분선 + 서버 통합 최근 거래 최저가
     if (recentTradeMinNQ !== null || recentTradeMinHQ !== null) {
-        let recentText = '══════════════════\n';
+        let recentText = '‧˚₊‧ ┈┈┈ ⟡ ┈┈┈ ‧₊˚⊹\n\n';
         recentText += '📈 **(서버 통합) 최근 거래 최저가**\n';
         
         if (recentTradeMinNQ !== null) {
@@ -393,7 +426,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
     // 데이터가 전혀 없는 경우
     if (serversWithNQ.length === 0 && serversWithHQ.length === 0) {
         embed.setColor(0xFF0000);
-        embed.setDescription('한국 서버에 등록된 시세 정보가 없습니다.');
+        embed.setDescription('한국 서버에 등록된 시세 정보가 없습니다.\n\n');
     }
     
     return embed;
@@ -422,15 +455,16 @@ client.on('messageCreate', async (message) => {
         try {
             let item = null;
             let iconUrl = null;
+            let suggestions = [];
             
             // 1. 한국어 DB에서 먼저 검색
             if (koreanItemDB.size > 0) {
-                item = searchKoreanItem(itemName);
-                if (item) {
-                    // 아이콘 URL 구성 (XIVAPI 사용)
-                    if (item.icon) {
-                        iconUrl = `https://xivapi.com${item.icon}`;
-                    }
+                const result = searchKoreanItem(itemName);
+                item = result.item;
+                suggestions = result.suggestions;
+                
+                if (item && item.icon) {
+                    iconUrl = `https://xivapi.com${item.icon}`;
                 }
             }
             
@@ -446,16 +480,28 @@ client.on('messageCreate', async (message) => {
             }
             
             if (!item) {
-                return searchMsg.edit(`**${itemName}**을(를) 찾을 수 없습니다.`);
+                return searchMsg.edit(`**${itemName}**을(를) 찾을 수 없습니다.\n\n`);
             }
             
-            await searchMsg.edit(`🔍 **${item.name}** (ID: ${item.id}) 시세 조회 중...`);
+            await searchMsg.edit(`🔍 **${item.name}** 시세 조회 중...`);
             
             // 3. 모든 한국 서버 시세 조회
             const data = await getAllKoreanServerPrices(item.id);
             
             // 4. 결과 임베드 생성 및 전송
             const embed = createResultEmbed(item.name, item.id, data, iconUrl);
+            
+            // 5. 추천 목록 추가
+            if (suggestions.length > 0) {
+                const suggestionText = suggestions
+                    .map(s => s.name)
+                    .join('\n');
+                embed.addFields({ 
+                    name: '🔎 다른 아이템을 찾으셨나요?', 
+                    value: suggestionText 
+                });
+            }
+            
             await searchMsg.edit({ content: null, embeds: [embed] });
             
         } catch (error) {
@@ -503,7 +549,7 @@ client.on('messageCreate', async (message) => {
     if (message.content === '!시세도움' || message.content === '!시세help') {
         const helpEmbed = new EmbedBuilder()
             .setColor(0x3498DB)
-            .setTitle('📖 파판14 장터 게시판 시세 봇 사용법')
+            .setTitle('📖 파판14 시세 봇 사용법')
             .setDescription('한국 서버(카벙클, 초코보, 모그리, 톤베리, 펜리르)의 장터 시세를 조회합니다.')
             .addFields(
                 { name: '!시세 [아이템이름]', value: '아이템 이름으로 검색\n예: `!시세 염료: 순백색`' },
