@@ -349,10 +349,10 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
             if (r.minPriceNQ !== null || r.minPriceHQ !== null) {
                 const prices = [];
                 if (r.minPriceNQ !== null) {
-                    priceText += `${isMinNQ ? '⭐ ' : ''}NQ 최저 판매가: ${r.minPriceNQ.toLocaleString()} 길\n`;
+                    priceText += `${isMinNQ ? '⭐ ' : ''}NQ 최저 판매가: ${r.minPriceNQ.toLocaleString()} 길`;
                 }
                 if (r.minPriceHQ !== null) {
-                    priceText += `${isMinHQ ? '⭐ ' : ''}HQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길`;
+                    priceText += `${isMinHQ ? '⭐ ' : ''}\nHQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길`;
                 }                
             } else {
                 priceText += `매물 없음`;
