@@ -6,11 +6,11 @@ const path = require('path');
 
 // 한국 서버 정보 (이모지 포함)
 const KOREAN_SERVERS = [
-    { id: 2075, name: '카벙클', emoji: '💎' },
-    { id: 2076, name: '초코보', emoji: '🐤' },
-    { id: 2077, name: '모그리', emoji: '🧸' },
-    { id: 2078, name: '톤베리', emoji: '🗡️' },
-    { id: 2080, name: '펜리르', emoji: '🐺' }
+    { id: 2075, name: '카벙클', emoji: '' },
+    { id: 2076, name: '초코보', emoji: '' },
+    { id: 2077, name: '모그리', emoji: '' },
+    { id: 2078, name: '톤베리', emoji: '' },
+    { id: 2080, name: '펜리르', emoji: '' }
 ];
 
 // 한국어 아이템 데이터베이스 (메모리에 로드)
@@ -342,7 +342,6 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
             // 이 서버가 최저가인지 표시
             const isMinNQ = r.minPriceNQ === overallMinNQ && overallMinNQ !== null;
             const isMinHQ = r.minPriceHQ === overallMinHQ && overallMinHQ !== null;
-            const isMin = isMinNQ || isMinHQ;
             
             priceText += `${r.emoji} **${r.server}**\n`;
             
@@ -350,13 +349,11 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
             if (r.minPriceNQ !== null || r.minPriceHQ !== null) {
                 const prices = [];
                 if (r.minPriceNQ !== null) {
-                    prices.push(`NQ 최저 판매가: ${r.minPriceNQ.toLocaleString()} 길`);
+                    priceText += `${isMinNQ ? '⭐ ' : ''}NQ 최저 판매가: ${r.minPriceNQ.toLocaleString()} 길\n`;
                 }
                 if (r.minPriceHQ !== null) {
-                    prices.push(`HQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길`);
-                }
-                
-                priceText += `${isMin ? '⭐ ' : ''}${prices.join('\n')}`;
+                    priceText += `${isMinHQ ? '⭐ ' : ''}HQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길\n`;
+                }                
             } else {
                 priceText += `매물 없음`;
             }
@@ -378,11 +375,11 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
         recentText += '📈 **(서버 통합) 최근 거래 최저가**\n';
         
         if (recentTradeMinNQ !== null) {
-            recentText += `NQ: ${recentTradeMinNQ.toLocaleString()}G`;
+            recentText += `NQ: ${recentTradeMinNQ.toLocaleString()} 길`;
         }
         if (recentTradeMinHQ !== null) {
             if (recentTradeMinNQ !== null) recentText += ' | ';
-            recentText += `HQ: ${recentTradeMinHQ.toLocaleString()}G`;
+            recentText += `HQ: ${recentTradeMinHQ.toLocaleString()} 길`;
         }
         
         embed.addFields({ name: '\u200B', value: recentText });
