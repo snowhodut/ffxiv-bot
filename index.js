@@ -374,7 +374,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
     
     // 구분선 + 서버 통합 최근 거래 최저가
     if (recentTradeMinNQ !== null || recentTradeMinHQ !== null) {
-        let recentText = '‧˚₊‧ ┈┈┈ ⟡ ┈┈┈ ‧₊˚⊹\n';
+        let recentText = '\n‧˚₊‧ ┈┈┈ ⟡ ┈┈┈ ‧₊˚⊹\n\n';
         recentText += '📈 **(서버 통합) 최근 거래 최저가**\n';
         
         if (recentTradeMinNQ !== null) {
@@ -456,16 +456,13 @@ client.on('messageCreate', async (message) => {
             // 4. 결과 임베드 생성 및 전송
             const embed = createResultEmbed(item.name, item.id, data, iconUrl);
             
-            // 5. 추천 목록 추가 (최대 5개, 작은 폰트)
+            // 5. 추천 목록 추가 (최대 5개, footer로 작은 폰트)
             if (suggestions.length > 0) {
                 const suggestionList = suggestions
                     .slice(0, 5)
-                    .map(s => `-# ${s.name}`)
-                    .join('\n');
-                embed.addFields({ 
-                    name: '\u200B', 
-                    value: `-# 다른 아이템을 찾으셨나요?\n${suggestionList}`
-                });
+                    .map(s => s.name)
+                    .join(' • ');
+                embed.setFooter({ text: `다른 아이템을 찾으셨나요? ${suggestionList}` });
             }
             
             await searchMsg.edit({ content: null, embeds: [embed] });
