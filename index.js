@@ -461,8 +461,8 @@ client.on('messageCreate', async (message) => {
                 const suggestionList = suggestions
                     .slice(0, 5)
                     .map(s => s.name)
-                    .join(' • ');
-                embed.setFooter({ text: `다른 아이템을 찾으셨나요? ${suggestionList}` });
+                    .join('\n');
+                embed.setFooter({ text: `다른 아이템을 찾으셨나요?\n${suggestionList}` });
             }
             
             await searchMsg.edit({ content: null, embeds: [embed] });
