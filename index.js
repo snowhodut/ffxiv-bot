@@ -303,7 +303,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
     
     const embed = new EmbedBuilder()
         .setColor(0x9B59B6) // 보라색
-        .setTitle(`🏷️ ${itemName} 시세 (한국 서버)`)
+        .setTitle(`${itemName}`)
         .setTimestamp();
     
     // 아이콘 썸네일 추가
@@ -314,97 +314,62 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
     // NQ 데이터가 있는 서버들
     const serversWithNQ = servers.filter(r => !r.error && r.minPriceNQ !== null);
     const serversWithHQ = servers.filter(r => !r.error && r.minPriceHQ !== null);
-    const serversWithoutData = servers.filter(r => !r.error && r.minPriceNQ === null && r.minPriceHQ === null);
     
     // 전체 NQ 최저가 찾기
     let overallMinNQ = null;
-    let overallMinNQServer = null;
     for (const r of serversWithNQ) {
         if (overallMinNQ === null || r.minPriceNQ < overallMinNQ) {
             overallMinNQ = r.minPriceNQ;
-            overallMinNQServer = r.server;
         }
     }
     
     // 전체 HQ 최저가 찾기
     let overallMinHQ = null;
-    let overallMinHQServer = null;
     for (const r of serversWithHQ) {
         if (overallMinHQ === null || r.minPriceHQ < overallMinHQ) {
             overallMinHQ = r.minPriceHQ;
-            overallMinHQServer = r.server;
         }
-    }
-    
-    // 상단에 전체 최저가 표시 + 디바이더
-    let headerText = '';
-    if (overallMinNQ !== null) {
-        headerText += `**NQ 최저: ${overallMinNQ.toLocaleString()}G** — ${overallMinNQServer}\n`;
-    }
-    if (overallMinHQ !== null) {
-        headerText += `**HQ 최저: ${overallMinHQ.toLocaleString()}G** — ${overallMinHQServer}\n`;
-    }
-    
-    if (headerText) {
-        headerText += '\n‧˚₊‧ ┈┈┈ ⟡ ┈┈┈ ‧₊˚⊹';
-        embed.setDescription(headerText);
     }
     
     // 서버별 가격 목록
     let priceText = '';
-    for (const r of servers) {
+    for (let i = 0; i < servers.length; i++) {
+        const r = servers[i];
+        
         if (r.error) {
-            priceText += `${r.emoji} **${r.server}**: ⚠️ 조회 실패\n`;
-            continue;
-        }
-        
-        // 이 서버가 NQ 최저가인지 표시
-        const isMinNQ = r.minPriceNQ === overallMinNQ && overallMinNQ !== null;
-        const isMinHQ = r.minPriceHQ === overallMinHQ && overallMinHQ !== null;
-        
-        let serverLine = `${r.emoji} **${r.server}**`;
-        serverLine += '\n\n';
-        
-        // 가격 정보
-        if (r.minPriceNQ !== null || r.minPriceHQ !== null) {
-            const prices = [];
-            if (r.minPriceNQ !== null) {
-                prices.push(`NQ: ${r.minPriceNQ.toLocaleString()}G`);
-            }
-            if (r.minPriceHQ !== null) {
-                prices.push(`HQ: ${r.minPriceHQ.toLocaleString()}G`);
-            }
-            
-            // 업데이트 시간
-            let updateStr = '';
-            if (r.lastUploadTime) {
-                const updateTime = new Date(r.lastUploadTime);
-                const now = new Date();
-                const diffMs = now - updateTime;
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffMins = Math.floor(diffMs / (1000 * 60));
-                
-                if (diffHours > 0) {
-                    updateStr = `${diffHours}시간 전`;
-                } else {
-                    updateStr = `${diffMins}분 전`;
-                }
-            }
-            
-            serverLine += `${isMinNQ ? '⭐ ' : ''}${prices.join(' | ')}`;
-            if (updateStr) {
-                serverLine += `  |  🕐 업데이트: ${updateStr}`;
-            }
-            serverLine += '\n';
+            priceText += `${r.emoji} **${r.server}**: ⚠️ 조회 실패`;
         } else {
-            serverLine += `매물 없음\n`;
+            // 이 서버가 최저가인지 표시
+            const isMinNQ = r.minPriceNQ === overallMinNQ && overallMinNQ !== null;
+            const isMinHQ = r.minPriceHQ === overallMinHQ && overallMinHQ !== null;
+            const isMin = isMinNQ || isMinHQ;
+            
+            priceText += `${r.emoji} **${r.server}**\n`;
+            
+            // 가격 정보
+            if (r.minPriceNQ !== null || r.minPriceHQ !== null) {
+                const prices = [];
+                if (r.minPriceNQ !== null) {
+                    prices.push(`NQ 최저 판매가: ${r.minPriceNQ.toLocaleString()} 길`);
+                }
+                if (r.minPriceHQ !== null) {
+                    prices.push(`HQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길`);
+                }
+                
+                priceText += `${isMin ? '⭐ ' : ''}${prices.join('\n')}`;
+            } else {
+                priceText += `매물 없음`;
+            }
         }
         
-        priceText += serverLine;
+        // 서버들 사이에 줄바꿈 추가 (마지막 서버 제외)
+        if (i < servers.length - 1) {
+            priceText += '\n\n';
+        }
     }
     
     if (priceText) {
-        embed.addFields({ name: '\u200B', value: priceText }); // 빈 이름으로 깔끔하게
+        embed.setDescription(priceText);
     }
     
     // 구분선 + 서버 통합 최근 거래 최저가
@@ -426,7 +391,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
     // 데이터가 전혀 없는 경우
     if (serversWithNQ.length === 0 && serversWithHQ.length === 0) {
         embed.setColor(0xFF0000);
-        embed.setDescription('한국 서버에 등록된 시세 정보가 없습니다.\n\n');
+        embed.setDescription('한국 서버에 등록된 시세 정보가 없습니다.');
     }
     
     return embed;
@@ -491,14 +456,15 @@ client.on('messageCreate', async (message) => {
             // 4. 결과 임베드 생성 및 전송
             const embed = createResultEmbed(item.name, item.id, data, iconUrl);
             
-            // 5. 추천 목록 추가
+            // 5. 추천 목록 추가 (최대 5개, 작은 폰트)
             if (suggestions.length > 0) {
                 const suggestionText = suggestions
+                    .slice(0, 5)
                     .map(s => s.name)
                     .join('\n');
                 embed.addFields({ 
-                    name: '🔎 다른 아이템을 찾으셨나요?', 
-                    value: suggestionText 
+                    name: '-# 다른 아이템을 찾으셨나요?', 
+                    value: `-# ${suggestions.slice(0, 5).map(s => s.name).join('\n-# ')}`
                 });
             }
             
