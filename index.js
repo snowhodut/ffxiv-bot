@@ -352,7 +352,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
                     priceText += `${isMinNQ ? '⭐ ' : ''}NQ 최저 판매가: ${r.minPriceNQ.toLocaleString()} 길\n`;
                 }
                 if (r.minPriceHQ !== null) {
-                    priceText += `${isMinHQ ? '⭐ ' : ''}HQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길\n`;
+                    priceText += `${isMinHQ ? '⭐ ' : ''}HQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길`;
                 }                
             } else {
                 priceText += `매물 없음`;
