@@ -298,14 +298,14 @@ async function getAllKoreanServerPricesFallback(itemId) {
 /**
  * 결과를 Discord Embed로 포맷팅 (스크린샷 형식)
  */
-function createResultEmbed(itemName, itemId, data, iconUrl = null) {
+function createResultEmbed(itemName, itemId, data, iconUrl = null, suggestions = []) {
     const { servers, recentTradeMinNQ, recentTradeMinHQ } = data;
-    
+
     const embed = new EmbedBuilder()
         .setColor(0x9B59B6) // 보라색
         .setTitle(`${itemName}`)
         .setTimestamp();
-    
+
     // 아이콘 썸네일 추가
     if (iconUrl) {
         embed.setThumbnail(iconUrl);
@@ -390,7 +390,16 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null) {
         embed.setColor(0xFF0000);
         embed.setDescription('한국 서버에 등록된 시세 정보가 없습니다.');
     }
-    
+
+    // 추천 검색어 추가 (시세 정보 유무와 관계없이 표시)
+    if (suggestions.length > 0) {
+        const suggestionList = suggestions
+            .slice(0, 5)
+            .map(s => s.name)
+            .join('\n');
+        embed.setFooter({ text: `다른 아이템을 찾으셨나요?\n${suggestionList}` });
+    }
+
     return embed;
 }
 
@@ -449,19 +458,10 @@ client.on('messageCreate', async (message) => {
             
             // 3. 모든 한국 서버 시세 조회
             const data = await getAllKoreanServerPrices(item.id);
-            
-            // 4. 결과 임베드 생성 및 전송
-            const embed = createResultEmbed(item.name, item.id, data, iconUrl);
-            
-            // 5. 추천 목록 추가 (최대 5개, footer로 작은 폰트)
-            if (suggestions.length > 0) {
-                const suggestionList = suggestions
-                    .slice(0, 5)
-                    .map(s => s.name)
-                    .join('\n');
-                embed.setFooter({ text: `다른 아이템을 찾으셨나요?\n${suggestionList}` });
-            }
-            
+
+            // 4. 결과 임베드 생성 및 전송 (suggestions도 함께 전달)
+            const embed = createResultEmbed(item.name, item.id, data, iconUrl, suggestions);
+
             await searchMsg.edit({ content: null, embeds: [embed] });
             
         } catch (error) {
