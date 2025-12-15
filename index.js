@@ -371,7 +371,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null, suggestions =
     
     // 구분선 + 서버 통합 최근 거래 최저가
     if (recentTradeMinNQ !== null || recentTradeMinHQ !== null) {
-        let recentText = '\n‧˚₊‧ ┈┈┈ ⟡ ┈┈┈ ‧₊˚⊹\n\n';
+        let recentText = '\n‧˚₊‧ ┈┈┈┈ ⟡ ┈┈┈┈ ‧₊˚⊹\n\n';
         recentText += '📈 **(서버 통합) 최근 거래 최저가**\n';
         
         if (recentTradeMinNQ !== null) {
