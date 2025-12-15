@@ -73,20 +73,23 @@ function loadKoreanItemDB() {
  */
 function searchKoreanItem(query) {
     const queryLower = query.toLowerCase();
-    
-    // 1. 정확히 일치하는 것 먼저
+
+    // 1. 정확히 일치하는 것 먼저 확인
+    let exactMatch = null;
     if (koreanItemDB.has(queryLower)) {
-        return { 
-            item: koreanItemDB.get(queryLower), 
-            suggestions: [] 
-        };
+        exactMatch = koreanItemDB.get(queryLower);
     }
-    
+
     const endsWithMatches = [];   // 검색어로 끝나는 것
     const startsWithMatches = []; // 검색어로 시작하는 것
     const containsMatches = [];   // 검색어를 포함하는 것
-    
+
     for (const [name, item] of koreanItemDB) {
+        // 정확히 일치한 아이템은 suggestions에서 제외
+        if (exactMatch && item.id === exactMatch.id) {
+            continue;
+        }
+
         if (name.endsWith(queryLower)) {
             endsWithMatches.push(item);
         } else if (name.startsWith(queryLower)) {
@@ -95,7 +98,7 @@ function searchKoreanItem(query) {
             containsMatches.push(item);
         }
     }
-    
+
     // 정렬 함수: 이름 길이순, 같으면 ID 낮은 순
     const sortFn = (a, b) => {
         if (a.name.length !== b.name.length) {
@@ -103,22 +106,30 @@ function searchKoreanItem(query) {
         }
         return a.id - b.id;
     };
-    
+
     endsWithMatches.sort(sortFn);
     startsWithMatches.sort(sortFn);
     containsMatches.sort(sortFn);
-    
+
     // 모든 매치 합치기 (우선순위 순서대로)
     const allMatches = [...endsWithMatches, ...startsWithMatches, ...containsMatches];
-    
+
+    // 정확히 일치한 것이 있으면 그것을 메인으로, 나머지를 추천으로
+    if (exactMatch) {
+        return {
+            item: exactMatch,
+            suggestions: allMatches.slice(0, 10)
+        };
+    }
+
+    // 정확히 일치한 것이 없으면 첫 번째 매치를 메인으로
     if (allMatches.length === 0) {
         return { item: null, suggestions: [] };
     }
-    
-    // 첫 번째가 메인 결과, 나머지는 추천 (최대 10개)
+
     const item = allMatches[0];
     const suggestions = allMatches.slice(1, 11);
-    
+
     return { item, suggestions };
 }
 
