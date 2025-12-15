@@ -313,7 +313,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null, suggestions =
     const { servers, recentTradeMinNQ, recentTradeMinHQ } = data;
 
     const embed = new EmbedBuilder()
-        .setColor(0xF0F8FF) // 하늘색
+        .setColor(0xADD8E6) // 하늘색
         .setTitle(`${itemName}`)
         .setTimestamp();
 
@@ -519,7 +519,7 @@ client.on('messageCreate', async (message) => {
     // !시세도움 명령어
     if (message.content === '!시세도움' || message.content === '!시세help') {
         const helpEmbed = new EmbedBuilder()
-            .setColor(0xF0F8FF)
+            .setColor(0xADD8E6)
             .setTitle('📖 파판14 시세 봇 사용법')
             .setDescription('한국 서버(카벙클, 초코보, 모그리, 톤베리, 펜리르)의 장터 시세를 조회합니다.')
             .addFields(
