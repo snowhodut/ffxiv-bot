@@ -358,13 +358,15 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null, suggestions =
             
             // 가격 정보
             if (r.minPriceNQ !== null || r.minPriceHQ !== null) {
-                const prices = [];
                 if (r.minPriceNQ !== null) {
                     priceText += `${isMinNQ ? '⭐ ' : ''}NQ 최저 판매가: ${r.minPriceNQ.toLocaleString()} 길`;
                 }
                 if (r.minPriceHQ !== null) {
-                    priceText += `${isMinHQ ? '⭐ ' : ''}\nHQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길`;
-                }                
+                    if (r.minPriceNQ !== null) {
+                        priceText += '\n';  // NQ가 있을 때만 줄바꿈
+                    }
+                    priceText += `${isMinHQ ? '⭐ ' : ''}HQ 최저 판매가: ${r.minPriceHQ.toLocaleString()} 길`;
+                }
             } else {
                 priceText += `매물 없음`;
             }
@@ -383,7 +385,7 @@ function createResultEmbed(itemName, itemId, data, iconUrl = null, suggestions =
     // 구분선 + 서버 통합 최근 거래 최저가
     if (recentTradeMinNQ !== null || recentTradeMinHQ !== null) {
         let recentText = '\n‧˚₊‧ ┈┈┈┈ ⟡ ┈┈┈┈ ‧₊˚⊹\n\n';
-        recentText += '📈 **(서버 통합) 최근 거래 최저가**\n';
+        recentText += '**(서버 통합) 최근 거래 최저가**\n';
         
         if (recentTradeMinNQ !== null) {
             recentText += `NQ: ${recentTradeMinNQ.toLocaleString()} 길`;
